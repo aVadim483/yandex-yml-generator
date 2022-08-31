@@ -1,5 +1,5 @@
 {
-    "name": "allconsole/yandex-yml-generator",
+    "name": "traineratwot/yandex-yml-generator",
     "description": "Simple Yandex Yml file generator.",
     "type": "library",
     "keywords": [
@@ -10,8 +10,8 @@
     "authors": [
         {
             "name": "Aleksandr Solodov",
-            "email": "allconsole@gmail.com",
-            "homepage": "https://github.com/allconsole",
+            "email": "traineratwot@gmail.com",
+            "homepage": "https://github.com/traineratwot",
             "role": "Developer"
         }
     ],
@@ -21,7 +21,7 @@
     },
     "autoload": {
         "psr-4": {
-            "allconsole\\yandexYmlGenerator\\": "src"
+            "traineratwot\\yandexYmlGenerator\\": "src"
         }
     }
 }

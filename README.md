@@ -12,11 +12,11 @@ Yml генератор на php
 	"repositories":[
 		{
 			"type":"vcs",
-			"url" :"https://github.com/allconsole/yandex-yml-generator"
+			"url" :"https://github.com/traineratwot/yandex-yml-generator"
 		}
 	],
 	"require"     :{
-		"allconsole/yandex-yml-generator":"dev-master"
+		"traineratwot/yandex-yml-generator":"dev-master"
 	}
 }
 ```

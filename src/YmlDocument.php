@@ -1,6 +1,6 @@
 <?php
 
-	namespace allconsole\yandexYmlGenerator;
+	namespace traineratwot\yandexYmlGenerator;
 
 
 	class YmlDocument extends \DomDocument
