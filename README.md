@@ -8,7 +8,17 @@ Yml генератор на php
 
 ### Установка
 ```bash
-composer require notdest/yandex-yml-generator
+{
+	"repositories":[
+		{
+			"type":"vcs",
+			"url" :"https://github.com/allconsole/yandex-yml-generator"
+		}
+	],
+	"require"     :{
+		"fandeco/category":"dev-master"
+	}
+}
 ```
 Если без композера - подсоединяем два файла из папки `/src/`, как в примерах.
 
