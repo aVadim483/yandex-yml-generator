@@ -7,7 +7,7 @@ ini_set('display_errors', '1');
 include('../src/ymlOffer.php');
 include("../src/ymlDocument.php");
 
-use notdest\yandexYmlGenerator\ymlDocument ;
+use allconsole\yandexYmlGenerator\ymlDocument ;
 
 $start  = time();
   
@@ -17,7 +17,7 @@ $start  = time();
 $y ->url('http://best.seller.ru');
  $y ->cms('Joomla!','3.4')
      ->agency('Webdivision.ru')
-     ->email('notdest@gmail.com');
+     ->email('allconsole@gmail.com');
   $y ->currency('RUR',1)
      ->currency('USD','CBRF',3)
      ->currency('EUR',70.8)

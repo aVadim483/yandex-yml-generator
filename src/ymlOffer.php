@@ -1,6 +1,6 @@
 <?php
 
-	namespace notdest\yandexYmlGenerator;
+	namespace allconsole\yandexYmlGenerator;
 
 	/**
 	 * @method $this model()

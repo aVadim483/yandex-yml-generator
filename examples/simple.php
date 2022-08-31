@@ -4,7 +4,7 @@ ini_set('display_errors', '1');
 include('../src/ymlOffer.php');
 include("../src/ymlDocument.php");
 
-use notdest\yandexYmlGenerator\ymlDocument ;
+use allconsole\yandexYmlGenerator\ymlDocument ;
 
 $fileName   = './simple.xml' ;
 
@@ -20,7 +20,7 @@ $fileName   = './simple.xml' ;
 
   $y ->cms('Joomla!','3.4')                             //      CMS: название, [версия] они же 'platform' и 'version'
      ->agency('Webdivision.ru')                         //      Агенство, отвечающее за работоспособность сайта
-     ->email('notdest@gmail.com');                      //      Контактный адрес разработчиков CMS или агентства
+     ->email('allconsole@gmail.com');                      //      Контактный адрес разработчиков CMS или агентства
 
   $y ->currency('RUR',1)                                // !!!  Минимум одна.  Добавляем валюты, это основная, тк rate=1
      ->currency('USD','CBRF',3)                         //      считаем по курсу ЦБ РФ, плюс 3 %

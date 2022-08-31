@@ -1,5 +1,5 @@
 {
-    "name": "notdest/yandex-yml-generator",
+    "name": "allconsole/yandex-yml-generator",
     "description": "Simple Yandex Yml file generator.",
     "type": "library",
     "keywords": [
@@ -10,8 +10,8 @@
     "authors": [
         {
             "name": "Aleksandr Solodov",
-            "email": "notdest@gmail.com",
-            "homepage": "https://github.com/notdest",
+            "email": "allconsole@gmail.com",
+            "homepage": "https://github.com/allconsole",
             "role": "Developer"
         }
     ],
@@ -21,7 +21,7 @@
     },
     "autoload": {
         "psr-4": {
-            "notdest\\yandexYmlGenerator\\": "src"
+            "allconsole\\yandexYmlGenerator\\": "src"
         }
     }
 }
