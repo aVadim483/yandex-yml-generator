@@ -68,9 +68,11 @@
 	 * @method $this hallPart()
 	 * @method $this premiere()
 	 * @method $this kids()
+	 * @method $this cpa()
+	 * @method $this weight()
 	 *
 	 */
-	class ymlOffer extends \DomElement
+	class YmlOffer extends \DomElement
 	{
 		protected $enc;
 		protected $type;

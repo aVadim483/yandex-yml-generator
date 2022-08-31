@@ -7,11 +7,11 @@ ini_set('display_errors', '1');
 include('../src/ymlOffer.php');
 include("../src/ymlDocument.php");
 
-use allconsole\yandexYmlGenerator\ymlDocument ;
+use allconsole\yandexYmlGenerator\YmlDocument ;
 
 $start  = time();
   
-  $y     = new ymlDocument('Магаз','ООО Шикарный магаз интернейшнл');
+  $y     = new YmlDocument('Магаз', 'ООО Шикарный магаз интернейшнл');
 
 
 $y ->url('http://best.seller.ru');

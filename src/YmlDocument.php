@@ -3,7 +3,7 @@
 	namespace allconsole\yandexYmlGenerator;
 
 
-	class ymlDocument extends \DomDocument
+	class YmlDocument extends \DomDocument
 	{
 
 		protected $currencies;
@@ -283,7 +283,7 @@
 					stream_set_write_buffer($this->fp, $this->bufferSize);
 				}
 				fwrite($this->fp, $begining);
-				$this->offer = new ymlOffer($type, $this->encoding);
+				$this->offer = new YmlOffer($type, $this->encoding);
 				$offers->appendChild($this->offer);
 			} else {
 				fwrite($this->fp, $this->saveXML($this->offer));                // если это не первый оффер, то записываем предыдущий

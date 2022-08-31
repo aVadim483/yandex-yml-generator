@@ -4,12 +4,12 @@ ini_set('display_errors', '1');
 include('../src/ymlOffer.php');
 include("../src/ymlDocument.php");
 
-use allconsole\yandexYmlGenerator\ymlDocument ;
+use allconsole\yandexYmlGenerator\YmlDocument ;
 
 $fileName   = './tour.xml' ;
 
     //параметры: Короткое название магазина, полное наименование компании, [кодировка, по умолчанию utf-8]
-    $y  = new ymlDocument('Магаз','ООО Шикарный магаз интернейшнл'/* , 'windows-1251'*/);
+    $y  = new YmlDocument('Магаз', 'ООО Шикарный магаз интернейшнл'/* , 'windows-1251'*/);
     
     $y ->fileName($fileName)                              //      имя файла, если хотим не по умолчанию './out.xml'
        ->bufferSize(1024*1024*16);                        //      если не нравится размер файлового буффера в php по умолчанию,байт
