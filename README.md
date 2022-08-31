@@ -16,7 +16,7 @@ Yml генератор на php
 		}
 	],
 	"require"     :{
-		"fandeco/category":"dev-master"
+		"allconsole/yandex-yml-generator":"dev-master"
 	}
 }
 ```
