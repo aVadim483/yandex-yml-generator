@@ -334,12 +334,12 @@
 		}
 
 
-		public function barcode($args)
+		public function barcode($barcode)
 		{
-			$len = strlen($args[0]);
-			$this->check(!is_int($args[0]), "barcode должен содержать только цифры");
+			$len = strlen($barcode);
+			$this->check(!is_int($barcode), "barcode должен содержать только цифры");
 			$this->check(!($len == 8 || $len == 12 || $len == 13), "barcode должен содержать 8, 12 или 13 цифр");
-			return $this->add('barcode', $args[0]);
+			return $this->add('barcode', $barcode);
 		}
 
 
