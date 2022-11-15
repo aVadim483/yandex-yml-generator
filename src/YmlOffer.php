@@ -350,10 +350,10 @@
 		}
 
 
-		public function dimensions($args, $unit = 'cm')
+		public function dimensions($l, $w, $h, $unit = 'cm')
 		{
-			$this->check(!is_float($args[0]) || !is_float($args[1]) || !is_float($args[2]), "dimensions должен быть float");
-			return $this->add('dimensions', $args[0] . '/' . $args[1] . '/' . $args[2], ['unit' => $unit]);
+			$this->check(!is_float($l) || !is_float($w) || !is_float($h), "dimensions должен быть float");
+			return $this->add('dimensions', $l . '/' . $w . '/' . $h, ['unit' => $unit]);
 		}
 
 
