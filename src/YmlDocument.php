@@ -6,13 +6,13 @@
 	class YmlDocument extends \DomDocument
 	{
 
-		protected $currencies;
-		protected $categories;
-		protected $offer      = NULL;
-		protected $shop;
-		protected $fp;
-		protected $fname      = './out.xml';
-		protected $bufferSize = NULL;
+		public $currencies;
+		public $categories;
+		public $offer      = NULL;
+		public $shop;
+		public $fp;
+		public $fname      = './out.xml';
+		public $bufferSize = NULL;
 
 
 		public function __construct($name, $company, $enc = "UTF-8")        // или windows-1251
@@ -271,10 +271,10 @@
 		}
 
 
-		protected function newOffer($id, $price, $currency, $category, $type, $from)
+		public function newOffer($id, $price, $currency, $category, $type, $from)
 		{
 
-			if (is_null($this->offer)) {                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                // если это первый оффер
+			if (is_null($this->offer)) {                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   // если это первый оффер
 				$offers   = $this->add('offers', ' ');                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  // добавляем элемент offers в DOM
 				$begining = $this->saveXML();                                        // и пишем поля магазина в новый файл
 				$begining = substr($begining, 0, strpos($begining, ' </offers>'));
@@ -333,13 +333,13 @@
 		}
 
 
-		protected function exc($text)
+		public function exc($text)
 		{
 			throw new \RuntimeException($text);
 		}
 
 
-		protected function add($name, $value = FALSE)                                                // добавление элемента к shop
+		public function add($name, $value = FALSE)                                                // добавление элемента к shop
 		{
 			if ($value !== FALSE) {
 				$this->shop->appendChild($this->createElement($name, $value));
@@ -358,4 +358,3 @@
 		}
 	}
 
-	?>

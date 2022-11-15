@@ -74,10 +74,10 @@
 	 */
 	class YmlOffer extends \DomElement
 	{
-		protected $enc;
-		protected $type;
-		protected $permitted;
-		protected $aliases
+		public $enc;
+		public $type;
+		public $permitted;
+		public $aliases
 			= [
 				'origin'    => 'country_of_origin', 'warranty' => 'manufacturer_warranty', 'sale' => 'sales_notes',
 				'pic'       => 'picture', 'isbn' => 'ISBN', 'pages' => 'page_extent', 'contents' => 'table_of_contents',
@@ -254,19 +254,19 @@
 			return $this->$method($args);
 		}
 
-		protected function _minq($args)
+		public function _minq($args)
 		{
 			$this->check(!is_int($args[0]) || $args[0] < 1, "min-quantity должен содержать только цифры");
 			return $this->add('min-quantity', $args[0]);
 		}
 
-		protected function _stepq($args)
+		public function _stepq($args)
 		{
 			$this->check(!is_int($args[0]) || $args[0] < 1, "step-quantity должен содержать только цифры");
 			return $this->add('step-quantity', $args[0]);
 		}
 
-		protected function _page_extent($args)
+		public function _page_extent($args)
 		{
 			$this->check(!is_int($args[0]), "page_extent должен содержать только цифры");
 			$this->check($args[0] < 0, "page_extent должен быть положительным числом");
@@ -274,13 +274,13 @@
 		}
 
 
-		protected function _sales_notes($args)
+		public function _sales_notes($args)
 		{
 			return $this->addStr('sales_notes', $args[0], 50);
 		}
 
 
-		protected function _age($args)
+		public function _age($args)
 		{
 			$this->check(!is_int($args[0]), "age должен иметь тип int");
 
@@ -304,7 +304,7 @@
 			return $this;
 		}
 
-		protected function _param($args)
+		public function param($args)
 		{
 			$newEl = new \DomElement('param', $args[1]);
 			$this->appendChild($newEl);
@@ -316,7 +316,7 @@
 		}
 
 
-		protected function _picture($args)
+		public function _picture($args)
 		{
 			$pics = $this->getElementsByTagName('picture');
 			$this->check($pics->length > 10, "Можно использовать максимум 10 картинок");
@@ -325,7 +325,7 @@
 		}
 
 
-		protected function _group_id($args)
+		public function _group_id($args)
 		{
 			$this->check(!is_int($args[0]), "group_id должен содержать только цифры");
 			$this->check(strlen($args[0]) > 9, "group_id не должен быть длиннее 9 символов");
@@ -334,7 +334,7 @@
 		}
 
 
-		protected function _barcode($args)
+		public function barcode($args)
 		{
 			$len = strlen($args[0]);
 			$this->check(!is_int($args[0]), "barcode должен содержать только цифры");
@@ -343,27 +343,27 @@
 		}
 
 
-		protected function _year($args)
+		public function _year($args)
 		{
 			$this->check(!is_int($args[0]), "year должен быть int");
 			return $this->add('year', $args[0]);
 		}
 
 
-		protected function _dimensions($args)
+		public function dimensions($args, $unit = 'cm')
 		{
 			$this->check(!is_float($args[0]) || !is_float($args[1]) || !is_float($args[2]), "dimensions должен быть float");
-			return $this->add('dimensions', $args[0] . '/' . $args[1] . '/' . $args[2]);
+			return $this->add('dimensions', $args[0] . '/' . $args[1] . '/' . $args[2], ['unit' => $unit]);
 		}
 
 
-		protected function _weight($args)
+		public function _weight($args)
 		{
 			$this->check(!is_float($args[0]), "weight должен быть float");
 			return $this->add('weight', $args[0]);
 		}
 
-		protected function _cpa($args)
+		public function _cpa($args)
 		{
 			if (!isset($args[0])) {
 				$args[0] = TRUE;
@@ -371,7 +371,7 @@
 			return $this->add('cpa', ($args[0]) ? '1' : '0');
 		}
 
-		protected function check($expr, $msg)
+		public function check($expr, $msg)
 		{
 			if ($expr) {
 				throw new \RuntimeException($msg);
@@ -384,10 +384,15 @@
 			return $this->add($name, $val);
 		}
 
-		public function add($name, $val = FALSE)
+		public function add($name, $val = FALSE, array $attrs = [])
 		{
 			$newEl = ($val === FALSE) ? new \DomElement($name) : new \DomElement($name, $val);
 			$this->appendChild($newEl);
+			if (!empty($attrs)) {
+				foreach ($attrs as $key => $v) {
+					$newEl->setAttribute($key, $v);
+				}
+			}
 			return $this;
 		}
 
