@@ -2,6 +2,8 @@
 
 	namespace traineratwot\yandexYmlGenerator;
 
+	use DOMException;
+
 	/**
 	 * @method $this model()
 	 * @method $this series()
@@ -304,7 +306,7 @@
 			return $this;
 		}
 
-		public function param($args)
+		public function _param($args)
 		{
 			$newEl = new \DomElement('param', $args[1]);
 			$this->appendChild($newEl);
@@ -334,12 +336,12 @@
 		}
 
 
-		public function barcode($barcode)
+		public function _barcode($args)
 		{
-			$len = strlen($barcode);
-			$this->check(!is_int($barcode), "barcode должен содержать только цифры");
+			$len = strlen($args[0]);
+			$this->check(!is_int($args[0]), "barcode должен содержать только цифры");
 			$this->check(!($len == 8 || $len == 12 || $len == 13), "barcode должен содержать 8, 12 или 13 цифр");
-			return $this->add('barcode', $barcode);
+			return $this->add('barcode', $args[0]);
 		}
 
 
@@ -350,10 +352,14 @@
 		}
 
 
-		public function dimensions($l, $w, $h, $unit = 'cm')
+		public function _dimensions($args)
 		{
-			$this->check(!is_float($l) || !is_float($w) || !is_float($h), "dimensions должен быть float");
-			return $this->add('dimensions', $l . '/' . $w . '/' . $h, ['unit' => $unit]);
+			$this->check(!is_float($args[0]) || !is_float($args[1]) || !is_float($args[2]), "dimensions должен быть float");
+			$attrs = [];
+			if ($args[3]) {
+				$attrs = ['unit', $args[3]];
+			}
+			return $this->add('dimensions', $args[0] . '/' . $args[1] . '/' . $args[2], $attrs);
 		}
 
 
@@ -384,13 +390,16 @@
 			return $this->add($name, $val);
 		}
 
-		public function add($name, $val = FALSE, array $attrs = [])
+		/**
+		 * @throws DOMException
+		 */
+		public function add($name, $val = FALSE, $attrs = [])
 		{
 			$newEl = ($val === FALSE) ? new \DomElement($name) : new \DomElement($name, $val);
 			$this->appendChild($newEl);
 			if (!empty($attrs)) {
-				foreach ($attrs as $key => $v) {
-					$newEl->setAttribute($key, $v);
+				foreach ($attrs as $k => $v) {
+					$newEl->setAttribute($k, $v);
 				}
 			}
 			return $this;
