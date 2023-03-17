@@ -349,7 +349,7 @@
 			return $this;
 		}
 
-		public function close()
+		public function saveAndClose()
 		{
 			fwrite($this->fp, $this->saveXML($this->offer));                                    // пишем последний оффер и концовку
 			fwrite($this->fp, '</offers></shop></yml_catalog>');
@@ -358,7 +358,7 @@
 
 		public function __destruct()
 		{
-			$this->close();
+			$this->saveAndClose();
 		}
 	}
 
