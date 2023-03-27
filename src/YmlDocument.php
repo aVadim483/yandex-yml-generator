@@ -3,7 +3,10 @@
 	namespace traineratwot\yandexYmlGenerator;
 
 
-	class YmlDocument extends \DomDocument
+	use DomDocument;
+	use DOMException;
+
+	class YmlDocument extends DomDocument
 	{
 
 		public $currencies;
@@ -45,6 +48,7 @@
 		public function fileName($fname)
 		{
 			$this->fname = $fname;
+			$this->fp = fopen($this->fname, 'w');
 			return $this;
 		}
 
@@ -271,6 +275,9 @@
 		}
 
 
+		/**
+		 * @throws DOMException
+		 */
 		public function newOffer($id, $price, $currency, $category, $type, $from)
 		{
 
@@ -278,7 +285,6 @@
 				$offers   = $this->add('offers', ' ');                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          // добавляем элемент offers в DOM
 				$begining = $this->saveXML();                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   // и пишем поля магазина в новый файл
 				$begining = substr($begining, 0, strpos($begining, ' </offers>'));
-				$this->fp = fopen($this->fname, 'w');
 				if (!is_null($this->bufferSize)) {
 					stream_set_write_buffer($this->fp, $this->bufferSize);
 				}
