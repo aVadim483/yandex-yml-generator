@@ -4,7 +4,10 @@ namespace traineratwot\yandexYmlGenerator;
 
 
 use DomDocument;
+use DomElement;
 use DOMException;
+use DOMImplementation;
+use RuntimeException;
 
 class YmlDocument extends DomDocument
 {
@@ -18,11 +21,14 @@ class YmlDocument extends DomDocument
     public $bufferSize = NULL;
 
 
+    /**
+     * @throws DOMException
+     */
     public function __construct($name, $company, $enc = "UTF-8", $date = null)        // или windows-1251
     {
         parent::__construct('1.0', $enc);
 
-        $imp = new \DOMImplementation();
+        $imp = new DOMImplementation();
 
         $root = $this->createElement('yml_catalog');                                    // делаем основные элементы
         $shop = $this->createElement('shop');
@@ -32,7 +38,7 @@ class YmlDocument extends DomDocument
         $this->appendChild($root);
         // TODO: mb_strlen не включены по умолчанию, лучше чем-то заменить
         if (mb_strlen($name, $this->encoding) > 20) {
-            throw new \RuntimeException("name='$name' длиннее 20 символов");
+            throw new RuntimeException("name='$name' длиннее 20 символов");
         }
 
         $this->add('name', $name)
@@ -44,6 +50,9 @@ class YmlDocument extends DomDocument
         $this->categories = $this->getElementsByTagName('categories')->item(0);
     }
 
+    /**
+     * @throws DOMException
+     */
     public function add($name, $value = FALSE)                                                // добавление элемента к shop
     {
         if ($value !== FALSE) {
@@ -67,6 +76,9 @@ class YmlDocument extends DomDocument
         return $this;
     }
 
+    /**
+     * @throws DOMException
+     */
     public function url($url)
     {
         if (mb_strlen($url, $this->encoding) > 50) {
@@ -78,9 +90,12 @@ class YmlDocument extends DomDocument
 
     public function exc($text)
     {
-        throw new \RuntimeException($text);
+        throw new RuntimeException($text);
     }
 
+    /**
+     * @throws DOMException
+     */
     public function cms($name, $version = FALSE)
     {
         $this->add('platform', $name);
@@ -90,12 +105,18 @@ class YmlDocument extends DomDocument
         return $this;
     }
 
+    /**
+     * @throws DOMException
+     */
     public function agency($name)
     {
         $this->add('agency', $name);
         return $this;
     }
 
+    /**
+     * @throws DOMException
+     */
     public function email($mail)
     {
         if (!filter_var($mail, FILTER_VALIDATE_EMAIL)) {
@@ -105,6 +126,9 @@ class YmlDocument extends DomDocument
         return $this;
     }
 
+    /**
+     * @throws DOMException
+     */
     public function cpa($val = TRUE)
     {
         if (!is_bool($val)) {
@@ -114,6 +138,9 @@ class YmlDocument extends DomDocument
         return $this;
     }
 
+    /**
+     * @throws DOMException
+     */
     public function currency($id, $rate, $plus = 0)
     {
         if (strpos($rate, ',') !== FALSE) {
@@ -135,6 +162,9 @@ class YmlDocument extends DomDocument
         return $this;
     }
 
+    /**
+     * @throws DOMException
+     */
     public function category($id, $name, $parentId = FALSE)
     {
         if ((!is_int($id)) || ($id < 1)) {
@@ -155,6 +185,9 @@ class YmlDocument extends DomDocument
         return $this;
     }
 
+    /**
+     * @throws DOMException
+     */
     public function simple($name, $id, $price, $currency, $category, $from = NULL)
     {
         $offer = $this->newOffer($id, $price, $currency, $category, 'simple', $from);
@@ -190,7 +223,7 @@ class YmlDocument extends DomDocument
             }
         }
 
-        if (preg_match("/[^a-z,A-Z,0-9]/", $id)) {
+        if (preg_match("/[^a-z,A-Z0-9]/", $id)) {
             $this->exc("id должен содержать только латинские буквы и цифры");
         }
         if (strlen($id) > 20) {
@@ -217,7 +250,7 @@ class YmlDocument extends DomDocument
         $this->offer->add('currencyId', $currency)
             ->add('categoryId', $category);
         if ($price) {
-            $pr = new \DomElement('price', $price);
+            $pr = new DomElement('price', $price);
             $this->offer->appendChild($pr);
             if (!is_null($from)) {
                 $pr->setAttribute('from', ($from) ? 'true' : 'false');
@@ -226,6 +259,9 @@ class YmlDocument extends DomDocument
         return $this->offer;
     }
 
+    /**
+     * @throws DOMException
+     */
     public function arbitrary($model, $vendor, $id, $price, $currency, $category, $from = NULL)
     {
         $offer = $this->newOffer($id, $price, $currency, $category, 'arbitrary', $from);
@@ -235,6 +271,9 @@ class YmlDocument extends DomDocument
         return $offer;
     }
 
+    /**
+     * @throws DOMException
+     */
     public function book($name, $publisher, $age, $age_u, $id, $price, $currency, $category, $from = NULL)
     {
         $offer = $this->newOffer($id, $price, $currency, $category, 'book', $from);
@@ -245,6 +284,9 @@ class YmlDocument extends DomDocument
         return $offer;
     }
 
+    /**
+     * @throws DOMException
+     */
     public function audiobook($name, $publisher, $id, $price, $currency, $category, $from = NULL)
     {
         $offer = $this->newOffer($id, $price, $currency, $category, 'audiobook', $from);
@@ -254,6 +296,9 @@ class YmlDocument extends DomDocument
         return $offer;
     }
 
+    /**
+     * @throws DOMException
+     */
     public function artist($title, $id, $price, $currency, $category, $from = NULL)
     {
         $offer = $this->newOffer($id, $price, $currency, $category, 'artist', $from);
@@ -262,6 +307,9 @@ class YmlDocument extends DomDocument
         return $offer;
     }
 
+    /**
+     * @throws DOMException
+     */
     public function tour($name, $days, $included, $transport, $id, $price, $currency, $category, $from = NULL)
     {
         $offer = $this->newOffer($id, $price, $currency, $category, 'tour', $from);
@@ -278,6 +326,9 @@ class YmlDocument extends DomDocument
         return $offer;
     }
 
+    /**
+     * @throws DOMException
+     */
     public function event($name, $place, $date, $id, $price, $currency, $category, $from = NULL)
     {
         $offer = $this->newOffer($id, $price, $currency, $category, 'event', $from);
@@ -288,6 +339,9 @@ class YmlDocument extends DomDocument
         return $offer;
     }
 
+    /**
+     * @throws DOMException
+     */
     public function medicine($name, $id, $price, $currency, $category, $from = NULL)
     {
         $offer = $this->newOffer($id, $price, $currency, $category, 'medicine', $from);
@@ -298,6 +352,9 @@ class YmlDocument extends DomDocument
         return $offer;
     }
 
+    /**
+     * @throws DOMException
+     */
     public function delivery($cost, $days, $before = -1)
     {
         $dlvs = $this->getElementsByTagName('delivery-options');
