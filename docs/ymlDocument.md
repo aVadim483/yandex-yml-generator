@@ -26,7 +26,8 @@ YmlDocument Class
 
 ------------------
 Далее идет группа функций, которые возвращают товарные предложения нужного типа.<br>
- **Возможно требует внимания**, поскольку я часто забываю здесь установить обязательный параметр, или путаю значение для `type`.
+**Возможно требует внимания**, поскольку я часто забываю здесь установить обязательный параметр, или путаю значение
+для `type`.
 
 `simple( $name, $id, $price, $currency, $category, $from = NULL )` - создаем упрощенный оффер, проверяем длину имени.
 
@@ -38,16 +39,20 @@ YmlDocument Class
 
 `artist( $title, $id, $price, $currency, $category, $from = NULL )` - аудио и видеопродукция.
 
-`tour( $name,$days,$included,$transport, $id, $price, $currency, $category, $from = NULL )` - туры, побоялся устанавливать ограничение на длину имени.
+`tour( $name,$days,$included,$transport, $id, $price, $currency, $category, $from = NULL )` - туры, побоялся
+устанавливать ограничение на длину имени.
 
-`event(  $name,$place,$date, $id, $price, $currency, $category, $from = NULL)` - событие, длину имени тоже не ограничиваю.
+`event(  $name,$place,$date, $id, $price, $currency, $category, $from = NULL)` - событие, длину имени тоже не
+ограничиваю.
 
-`medicine( $name, $id, $price, $currency, $category, $from = NULL )` - лекарства. Ряд параметров устанавливаю принудительно.
+`medicine( $name, $id, $price, $currency, $category, $from = NULL )` - лекарства. Ряд параметров устанавливаю
+принудительно.
 
 ---------------
 Далее идет ряд служебных `protected`-функций:
 
-`newOffer( $id, $price, $currency, $category, $type, $from )` - вызывается при создании любого типа оффера, требует и проверяет поля обязательные для всех типов.
+`newOffer( $id, $price, $currency, $category, $type, $from )` - вызывается при создании любого типа оффера, требует и
+проверяет поля обязательные для всех типов.
 
 `exc($text)` - короткий псевдоним для выкидывания исключений.
 

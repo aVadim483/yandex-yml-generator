@@ -1,27 +1,27 @@
 {
-    "name": "traineratwot/yandex-yml-generator",
-    "description": "Simple Yandex Yml file generator.",
-    "type": "library",
-    "keywords": [
-        "Yandex",
-        "Yml"
-    ],
-    "license": "MIT",
-    "authors": [
-        {
-            "name": "Aleksandr Solodov",
-            "email": "traineratwot@gmail.com",
-            "homepage": "https://github.com/traineratwot",
-            "role": "Developer"
-        }
-    ],
-    "minimum-stability": "stable",
-    "require": {
-        "php": ">=5.4.0"
-    },
-    "autoload": {
-        "psr-4": {
-            "traineratwot\\yandexYmlGenerator\\": "src"
-        }
+  "name": "traineratwot/yandex-yml-generator",
+  "description": "Simple Yandex Yml file generator.",
+  "type": "library",
+  "keywords": [
+    "Yandex",
+    "Yml"
+  ],
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Aleksandr Solodov",
+      "email": "traineratwot@gmail.com",
+      "homepage": "https://github.com/traineratwot",
+      "role": "Developer"
     }
+  ],
+  "minimum-stability": "stable",
+  "require": {
+    "php": ">=5.4.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "traineratwot\\yandexYmlGenerator\\": "src"
+    }
+  }
 }
