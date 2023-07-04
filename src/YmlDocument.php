@@ -12,13 +12,26 @@ use RuntimeException;
 class YmlDocument extends DomDocument
 {
 
-    public $currencies;
-    public $categories;
+    /**
+     * @var DOMElement|NULL
+     */
+    public $currencies = null;
+    /**
+     * @var DOMElement|NULL
+     */
+    public $categories = null;
     public $offer = NULL;
+    /**
+     * @var DOMElement|false
+     */
     public $shop;
     public $fp;
     public $fname = './out.xml';
     public $bufferSize = NULL;
+    /**
+     * @var DOMElement|false
+     */
+    public $root;
 
 
     /**
@@ -30,7 +43,8 @@ class YmlDocument extends DomDocument
 
         $imp = new DOMImplementation();
 
-        $root = $this->createElement('yml_catalog');                                    // делаем основные элементы
+        $root = $this->createElement('yml_catalog');
+        $this->root = $root;// делаем основные элементы
         $shop = $this->createElement('shop');
         $this->shop = $shop;
         $root->setAttribute('date', $date ?: date('Y-m-d H:i'));
@@ -40,14 +54,12 @@ class YmlDocument extends DomDocument
         if (mb_strlen($name, $this->encoding) > 20) {
             throw new RuntimeException("name='$name' длиннее 20 символов");
         }
-
-        $this->add('name', $name)
-            ->add('company', $company)
-            ->add('currencies')
-            ->add('categories');
-
-        $this->currencies = $this->getElementsByTagName('currencies')->item(0);
-        $this->categories = $this->getElementsByTagName('categories')->item(0);
+        if ($name) {
+            $this->add('name', $name);
+        }
+        if ($company) {
+            $this->add('company', $company);
+        }
     }
 
     /**
@@ -157,6 +169,10 @@ class YmlDocument extends DomDocument
         if ($plus) {
             $c->setAttribute('plus', $plus);
         }
+        if (!$this->currencies) {
+            $this->add('currencies');
+            $this->currencies = $this->getElementsByTagName('currencies')->item(0);
+        }
 
         $this->currencies->appendChild($c);
         return $this;
@@ -180,7 +196,10 @@ class YmlDocument extends DomDocument
         if ($parentId !== FALSE) {
             $c->setAttribute('parentId', $parentId);
         }
-
+        if (!$this->categories) {
+            $this->add('categories');
+            $this->categories = $this->getElementsByTagName('categories')->item(0);
+        }
         $this->categories->appendChild($c);
         return $this;
     }
