@@ -1,10 +1,10 @@
 <?php
 error_reporting(E_ALL);
 ini_set('display_errors', '1');
-include('../src/ymlOffer.php');
-include("../src/ymlDocument.php");
+include('../YandexYmlGenerator/ymlOffer.php');
+include("../YandexYmlGenerator/ymlDocument.php");
 
-use traineratwot\yandexYmlGenerator\YmlDocument;
+use avadim\YmlGenerator\YmlDocument;
 
 $fileName = './tour.xml';
 

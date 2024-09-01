@@ -1,71 +1,71 @@
 <?php
+
 error_reporting(E_ALL);
 ini_set('display_errors', '1');
-include('../src/ymlOffer.php');
-include("../src/ymlDocument.php");
 
-use traineratwot\yandexYmlGenerator\YmlDocument;
+require_once __DIR__ . '/../src/autoload.php';
 
-$fileName = './artist.xml';
+use avadim\YandexYmlGenerator\YmlDocument;
 
-//параметры: Короткое название магазина, полное наименование компании, [кодировка, по умолчанию utf-8]
-$y = new YmlDocument('Магаз', 'ООО Шикарный магаз интернейшнл'/* , 'windows-1251'*/);
+$fileName = __DIR__ . '/files/' . basename(__FILE__, '.php') . '.xml';
 
-$y->fileName($fileName)                              //      имя файла, если хотим не по умолчанию './out.xml'
-->bufferSize(1024 * 1024 * 16);                        //      если не нравится размер файлового буффера в php по умолчанию,байт
+//параметры такие же, как при создании DOMDocument
+$yml = new YmlDocument();
+$yml->name('Магазин');
+$yml->company('ООО Отличный магазин (от других)');
+$yml->url('http://best.seller.ru');          // !!!  условно обязательный. Адрес магазина
 
+$yml
+    ->platform('Joomla!', '3.4')    //      CMS: название, [версия] они же 'platform' и 'version'
+    ->agency('Webdivision.ru')             //      Агенство, отвечающее за работоспособность сайта
+    ->email('traineratwot@gmail.com');      //      Контактный адрес разработчиков CMS или агентства
 
-$y->url('http://best.seller.ru');                    // !!!  условно обязательный. Адрес магазина
+$yml
+    ->currency('RUR', 1)               // !!!  Минимум одна.  Добавляем валюты, это основная, тк rate=1
+    ->currency('USD', 'CBRF', 3)  //      считаем по курсу ЦБ РФ, плюс 3 %
+    ->currency('EUR', 70.8);           //      дробную часть отделяем точкой
 
-
-$y->cms('Joomla!', '3.4')                             //      CMS: название, [версия] они же 'platform' и 'version'
-->agency('Webdivision.ru')                         //      Агенство, отвечающее за работоспособность сайта
-->email('traineratwot@gmail.com');                      //      Контактный адрес разработчиков CMS или агентства
-
-$y->currency('RUR', 1)                                // !!!  Минимум одна.  Добавляем валюты, это основная, тк rate=1
-->currency('USD', 'CBRF', 3)                         //      считаем по курсу ЦБ РФ, плюс 3 %
-->currency('EUR', 70.8)                             //      дробную часть отделяем точкой
-
-->category(1, 'Книги')                              // !!!  должны быть.  категория, находится в корне, id - положительное целое число, больше 0
-->category(2, 'Детективы', 1)                        //      подкатегория в "книги"
-->category(3, 'Боевики', 1)
+$yml
+    ->category(1, 'Книги')                  // !!!  должны быть.  категория, находится в корне, id - положительное целое число, больше 0
+    ->category(2, 'Детективы', 1)   //      подкатегория в "книги"
+    ->category(3, 'Боевики', 1)
     ->category(4, 'Видео')
     ->category(5, 'Комедии', 4);
 
-$y->delivery(300, 4, 18)                               // !!!  Условно обязательно. Доставка: стоимость 300р, срок 4 дня , до 18:00 срок не изменится
-->delivery(500, 0, 15)
+$yml
+    ->delivery(300, 4, 18)           // !!!  Условно обязательно. Доставка: стоимость 300р, срок 4 дня , до 18:00 срок не изменится
+    ->delivery(500, 0, 15)
     ->delivery(0, '7-8')
     ->cpa();                                          //       включение программы "Заказ на Маркете", можно еще передать false
 
-
-//-------------- добавляем предложение для аудио-видео
-
+//-------------- добавляем предложение для АУДИО-ВИДЕО
 
 // title , id , price, currencyId, categoryId, [price from - "цена от ххх руб." ]
-$offer = $y->artist('Свадьба Мюриэл', 'id01id1111', 900, "USD", 15 /* , true*/);
+$offer = $yml->offerArtist('Свадьба Мюриэл', 'id01id1111', 900, 'USD', 15 /* , true*/);
 
 
-$offer->artist('Pink Floyd')                                  //      Исполнитель
-->year(1955)                                            //      год
-->media('CD')                                           //      Носитель.
-->starring('Тони Колетт (Toni Collette),...')           //      Актеры.
-->director('П Дж Хоген')                                //      Режиссер.
-->originalName("Muriel's wedding")                      //      Оригинальное название.
-->country('Австралия')                                  //      Страна.
+$offer
+    ->artist('Pink Floyd')                                  //      Исполнитель
+    ->year(1955)                                            //      год
+    ->media('CD')                                           //      Носитель.
+    ->starring('Тони Колетт (Toni Collette),...')           //      Актеры.
+    ->director('П Дж Хоген')                                //      Режиссер.
+    ->originalName("Muriel's wedding")                      //      Оригинальное название.
+    ->country('Австралия')                                  //      Страна.
 
-->cbid(80)                                              //      Размер ставки на карточке товара. 0,8 у.е.
-->bid(90)                                               //      Размер ставки на остальных местах размещения. 0,9 у.е.
-->fee(220)                                              //      Размер комиссии от цены товара. 2.2%
-->available(false)                                      //      под заказ
+    ->cbid(80)                                              //      Размер ставки на карточке товара. 0,8 у.е.
+    ->bid(90)                                               //      Размер ставки на остальных местах размещения. 0,9 у.е.
+    ->fee(220)                                              //      Размер комиссии от цены товара. 2.2%
+    ->available(false)                                      //      под заказ
 
-->url("http://magaz.ru/tovar.html")                     // !!!  условно обязательный. URL страницы товара
+    ->url("http://magaz.ru/tovar.html")                     // !!!  условно обязательный. URL страницы товара
 
-->oldprice(1500)                                        //      Старая цена для расчёта скидки
-//->vat('VAT_10_110')            отсутствует в схеме    //      Ставка НДС для товара.
+    ->oldprice(1500)                                        //      Старая цена для расчёта скидки
+    //->vat('VAT_10_110')            отсутствует в схеме    //      Ставка НДС для товара.
 
-->pic('http://best.seller.ru/img/device12345.jpg')      // !!!  условно обязательные. Картинки
-->pic('http://best.seller.ru/img/device124.jpg')
-    ->pic('http://best.seller.ru/img/devi45.jpg')
+    ->picture('http://best.seller.ru/img/device12345.jpg')      // !!!  условно обязательные. Картинки
+    ->picture('http://best.seller.ru/img/device124.jpg')
+    ->picture('http://best.seller.ru/img/devi45.jpg')
     ->delivery(/* false*/)                                 //      Возможно доставить. false, чтобы невозможно
 
     ->dlvOption(300, 4, 18)                                   //      Доставка: стоимость 300р, срок 4 дня , до 18:00 срок не изменится
@@ -104,7 +104,7 @@ $offer->artist('Pink Floyd')                                  //      Испол
 ;
 
 
-unset($y);      // надо чтобы запустился деструктор
+unset($yml);      // надо чтобы запустился деструктор
 
 echo "Создан файл $fileName <br>\n";
 

@@ -38,7 +38,7 @@ Yml генератор на php
 
 ```php
 // model, vendor, id, price, currencyId, categoryId	, [price from - "цена от ххх руб." ]
-$offer = $y->arbitrary( '3811', 'Brand', 'id01id1111', 900, "USD", 15 /* , true*/ );
+$offer = $yml->offerArbitrary( '3811', 'Brand', 'id01id1111', 900, "USD", 15 /* , true*/ );
 
 $offer	->cbid(80)				//	Размер ставки на карточке товара. 0,8 у.е.
 	->url("http://magaz.ru/tovar.html")	// !!!	условно обязательный. URL страницы товара 
