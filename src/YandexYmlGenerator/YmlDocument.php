@@ -2,13 +2,12 @@
 
 namespace avadim\YandexYmlGenerator;
 
-
-use avadim\YandexYmlGenerator\YandexYmlGenerator\YmlOfferSimple;
 use DomDocument;
 use DomElement;
 use DOMException;
 use DOMImplementation;
 use RuntimeException;
+use avadim\YandexYmlGenerator\YmlOfferSimple;
 
 class YmlDocument extends DomDocument
 {
@@ -20,11 +19,11 @@ class YmlDocument extends DomDocument
     protected array $shopElements = [];
     protected bool $shopSaved = false;
 
-    public ?DomElement $currencies = null;
+    protected ?DomElement $currencies = null;
 
-    public ?DomElement $categories = null;
+    protected ?DomElement $categories = null;
 
-    public ?YmlOffer $offer = null;
+    protected $offer = null;
 
     protected ?string $defaultCurrency = null;
 
@@ -38,7 +37,7 @@ class YmlDocument extends DomDocument
     {
         parent::__construct($xmlVersion ?: '1.0', $xmlEncoding ?: 'UTF-8');
 
-        $this->date = date('Y-m-dTH:i');
+        $this->date = date('Y-m-d\TH:i');
         $this->shopElements = [
             'name' => null,
             'company' => null,
@@ -306,8 +305,10 @@ class YmlDocument extends DomDocument
         $str .= '<shop>';
         fwrite($this->fp, $str);
         foreach ($this->shopElements as $xml) {
-            $str = $xml->ownerDocument->saveXML($xml);
-            fwrite($this->fp, $str);
+            if ($xml) {
+                $str = $xml->ownerDocument->saveXML($xml);
+                fwrite($this->fp, $str);
+            }
         }
         fwrite($this->fp, '<offers>');
         $this->shopSaved = true;
@@ -333,25 +334,20 @@ class YmlDocument extends DomDocument
     {
         switch (strtolower($offerType)) {
             case 'simple':
-                return YmlOfferSimple::class;
+                return \avadim\YandexYmlGenerator\YmlOfferSimple::class;
             default:
-                return YmlOffer::class;
+                return \avadim\YandexYmlGenerator\YmlOffer::class;
         }
     }
 
     /**
-     * @param $id
-     * @param $price
-     * @param $currency
-     * @param $category
-     * @param $offerType
-     * @param $from
+     * @param string $offerType
+     * @param string $id
+     * @param array|null $elements
      *
-     * @return YmlOffer
-     *
-     * @throws DOMException
+     * @return mixed
      */
-    public function newOffer($offerType, $id, $price, $currency, $category, $from): YmlOffer
+    public function newOffer(string $offerType, string $id, ?array $elements = [])
     {
         if (!$this->shopSaved) {
             $this->writeBegin();
@@ -359,13 +355,10 @@ class YmlDocument extends DomDocument
 
         $this->writeOffer();
 
-        if (preg_match("/[^a-z,A-Z0-9]/", $id)) {
-            $this->error('id должен содержать только латинские буквы и цифры');
-        }
-        if (strlen($id) > 20) {
-            $this->error("id длиннее 20 символов");
-        }
+        $offerClass = static::getOfferClass($offerType);
+        $this->offer = new $offerClass($this, ['id' => $id], $elements);
 
+/*
         if ((!is_int($category)) || ($category < 1) || ($category >= pow(10, 19))) {
             $this->error("categoryId - целое число, не более 18 знаков");
         }
@@ -380,9 +373,6 @@ class YmlDocument extends DomDocument
             }
         }
 
-        $offerClass = static::getOfferClass($offerType);
-        $this->offer = new $offerClass($this, $offerType);
-        $this->offer->setAttribute('id', $id);
         $this->offer->addNode('currencyId', $currency);
         $this->offer->addNode('categoryId', $category);
         if ($price) {
@@ -391,26 +381,49 @@ class YmlDocument extends DomDocument
                 $pr->setAttribute('from', $from ? 'true' : 'false');
             }
         }
-
+*/
         return $this->offer;
     }
 
     /**
-     * @param $name
      * @param $id
-     * @param $price
-     * @param $currency
-     * @param $category
-     * @param $from
      *
      * @return YmlOffer
      *
      * @throws DOMException
      */
-    public function offerSimple($name, $id, $price, $currency, $category, $from = NULL): YmlOffer
+    public function offer($id, ?array $elements = []): YmlOffer
     {
-        $offer = $this->newOffer('simple', $id, $price, $currency, $category, $from);
-        $offer->addNodeStr('name', $name, 120);
+        $offer = $this->newOffer('custom', $id, $elements);
+
+        return $offer;
+    }
+
+    /**
+     * @param string $id
+     * @param string $name
+     * @param int $categoryId
+     * @param $price
+     * @param $currencyId
+     * @param bool|null $from
+     *
+     * @return YmlOfferSimple
+     *
+     * @throws DOMException
+     */
+    public function offerSimple(string $id, string $name, int $categoryId, $price, $currencyId, ?bool $from = null): YmlOfferSimple
+    {
+        /** @var YmlOfferSimple $offer */
+        $offer = $this->newOffer('simple', $id);
+
+        $offer->appendNode('name', $name);
+        $offer->appendNode('categoryId', $categoryId);
+        $offer->appendNode('currencyId', $currencyId);
+        $priceNode = $offer->appendNode('price', $price);
+        if ($from !== null) {
+            $priceNode->setAttribute('from', $from ? 'true' : 'false');
+        }
+        $this->offer = $offer;
 
         return $offer;
     }
@@ -418,12 +431,12 @@ class YmlDocument extends DomDocument
     /**
      * @throws DOMException
      */
-    public function offerArbitrary($model, $vendor, $id, $price, $currency, $category, $from = NULL)
+    public function offerArbitrary($id, $model, $vendor, $price, $currency, $category, $from = null)
     {
         $offer = $this->newOffer('arbitrary', $id, $price, $currency, $category, $from);
         $offer->setAttribute('type', 'vendor.model');
-        $offer->addNode('vendor', $vendor);
-        $offer->addNode('model', $model);
+        $offer->appendNode('vendor', $vendor);
+        $offer->appendNode('model', $model);
 
         return $offer;
     }
@@ -431,12 +444,12 @@ class YmlDocument extends DomDocument
     /**
      * @throws DOMException
      */
-    public function offerBook($name, $publisher, $age, $age_u, $id, $price, $currency, $category, $from = NULL)
+    public function offerBook($id, $name, $publisher, $age, $age_u, $price, $currency, $category, $from = NULL)
     {
         $offer = $this->newOffer('book', $id, $price, $currency, $category, $from);
         $offer->setAttribute('type', 'book');
         $offer->addNodeStr('name', $name, 120);
-        $offer->addNode('publisher', $publisher);
+        $offer->appendNode('publisher', $publisher);
         $offer->age($age, $age_u);
 
         return $offer;
@@ -445,12 +458,12 @@ class YmlDocument extends DomDocument
     /**
      * @throws DOMException
      */
-    public function offerAudiobook($name, $publisher, $id, $price, $currency, $category, $from = NULL)
+    public function offerAudiobook($id, $name, $publisher, $price, $currency, $category, $from = NULL)
     {
         $offer = $this->newOffer('audiobook', $id, $price, $currency, $category, $from);
         $offer->setAttribute('type', 'audiobook');
         $offer->addNodeStr('name', $name, 120);
-        $offer->addNode('publisher', $publisher);
+        $offer->appendNode('publisher', $publisher);
 
         return $offer;
     }
@@ -458,11 +471,11 @@ class YmlDocument extends DomDocument
     /**
      * @throws DOMException
      */
-    public function offerArtist($title, $id, $price, $currency, $category, $from = NULL)
+    public function offerArtist($id, $title, $price, $currency, $category, $from = NULL)
     {
         $offer = $this->newOffer('artist', $id, $price, $currency, $category, $from);
         $offer->setAttribute('type', 'artist.title');
-        $offer->addNode('title', $title);
+        $offer->appendNode('title', $title);
 
         return $offer;
     }
@@ -470,19 +483,19 @@ class YmlDocument extends DomDocument
     /**
      * @throws DOMException
      */
-    public function offerTour($name, $days, $included, $transport, $id, $price, $currency, $category, $from = NULL)
+    public function offerTour($id, $name, $days, $included, $transport, $price, $currency, $category, $from = NULL)
     {
         $offer = $this->newOffer('tour', $id, $price, $currency, $category, $from);
         $offer->setAttribute('type', 'tour');
-        $offer->addNode('name', $name);
+        $offer->appendNode('name', $name);
 
         if (!is_int($days) || $days < 0) {
             $this->error("days должно быть целым и положительным");
         }
-        $offer->addNode('days', $days);
+        $offer->appendNode('days', $days);
 
-        $offer->addNode('included', $included);
-        $offer->addNode('transport', $transport);
+        $offer->appendNode('included', $included);
+        $offer->appendNode('transport', $transport);
 
         return $offer;
     }
@@ -490,13 +503,13 @@ class YmlDocument extends DomDocument
     /**
      * @throws DOMException
      */
-    public function offerEvent($name, $place, $date, $id, $price, $currency, $category, $from = NULL)
+    public function offerEvent($id, $name, $place, $date, $price, $currency, $category, $from = NULL)
     {
         $offer = $this->newOffer('event', $id, $price, $currency, $category, $from);
         $offer->setAttribute('type', 'event-ticket');
-        $offer->addNode('name', $name);
-        $offer->addNode('place', $place);
-        $offer->addNode('date', $date);
+        $offer->appendNode('name', $name);
+        $offer->appendNode('place', $place);
+        $offer->appendNode('date', $date);
 
         return $offer;
     }
@@ -504,11 +517,11 @@ class YmlDocument extends DomDocument
     /**
      * @throws DOMException
      */
-    public function offerMedicine($name, $id, $price, $currency, $category, $from = NULL)
+    public function offerMedicine($id, $name, $price, $currency, $category, $from = NULL)
     {
         $offer = $this->newOffer('medicine', $id, $price, $currency, $category, $from);
         $offer->setAttribute('type', 'medicine');
-        $offer->addNode('name', $name);
+        $offer->appendNode('name', $name);
         $offer->pickup(TRUE);
         $offer->delivery(FALSE);
 

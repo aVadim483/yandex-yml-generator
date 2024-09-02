@@ -7,8 +7,6 @@ use DOMException;
 /**
  * @method $this series($arg)
  * @method $this author($arg)
- * @method $this vendorCode($arg)
- * @method $this vendor($arg)
  * @method $this expiry($arg)
  * @method $this rec($arg)
  * @method $this typePrefix($arg)
@@ -50,10 +48,6 @@ use DOMException;
  * @method $this manufacturerWarranty($arg)
  * @method $this pageExtent($arg)
  *
- * @method $this origin($arg)
- * @method $this warranty($arg)
- * @method $this sale($arg)
- * @method $this sales_notes($arg)
  * @method $this pages($arg)
  * @method $this page_extent($arg)
  * @method $this contents($arg)
@@ -73,8 +67,11 @@ abstract class YmlOfferAbstract
 
     protected \DOMElement $domElement;
 
-    protected string $offerType;
+    protected string $offerType = '';
     protected string $xmlEncoding;
+
+    // список правила валидации элементов (дочерних узлов)
+    protected array $childNodes = [];
 
     // обязательные узлы
     protected array $required = [];
@@ -82,52 +79,49 @@ abstract class YmlOfferAbstract
     // допустимые узлы
     protected array $permitted = [];
 
+    protected bool $permittedOnly = false;
+
     // правила валидации
-    private array $rules = [];
+    private array $validateRules = [];
 
     protected array $aliases
         = [
-            'countryOfOrigin' => 'country_of_origin', 'tableOfContents' => 'table_of_contents',
-            'performedBy' => 'performed_by', 'performanceType' => 'performance_type', 'recordingLength' => 'recording_length',
             'origin' => 'country_of_origin', 'warranty' => 'manufacturer_warranty', 'sale' => 'sales_notes',
             'isbn' => 'ISBN', 'pages' => 'page_extent', 'pageExtent' => 'page_extent', 'contents' => 'table_of_contents',
             'performer' => 'performed_by', 'performance' => 'performance_type', 'length' => 'recording_length',
-            'hotelStars' => 'hotel_stars',
-            'stars' => 'hotel_stars', 'priceMin' => 'price_min', 'priceMax' => 'price_max',
-            'hallPart' => 'hall_part', 'premiere' => 'is_premiere', 'isPremiere' => 'is_premiere',
-            'kids' => 'is_kids', 'isKids' => 'is_kids', 'groupId' => 'group_id', 'manufacturerWarranty' => 'manufacturer_warranty',
+            'stars' => 'hotel_stars', 'premiere' => 'is_premiere', 'kids' => 'is_kids',
         ];
 
 
-    public function __construct(\DOMDocument $document, string $offerType)
+    /**
+     * @param \DOMDocument $document
+     * @param array $attributes
+     * @param array|null $elements
+     *
+     * @throws DOMException
+     */
+    public function __construct(\DOMDocument $document, array $attributes, ?array $elements = [])
     {
         $this->domDocument = $document;
         $this->xmlEncoding = $document->xmlEncoding;
         $this->domElement = $document->createElement('offer');
-        $this->offerType = $offerType;
 
-        foreach ($this->required as $rule) {
-            if (strpos($rule, '|')) {
-                $parts = explode('|', $rule);
-                $nodeName = array_shift($parts);
-                $this->rules['required'][$nodeName] = $parts;
-            }
-            else {
-                $this->rules['required'][$rule] = [];
-            }
+        if (!isset($attributes['id'])) {
+            throw new \RuntimeException('Offer attribute "id" required');
+        }
+        if (!$this->validate($attributes['id'], 'alpha_digits|string:1,20', $error)) {
+            throw new \RuntimeException(sprintf('Validation error for offer attribute "id" with value "%s" (%s)', $attributes['id'], $error));
+        }
+        foreach ($attributes as $name => $value) {
+            $this->domElement->setAttribute($name, $value);
         }
 
-        foreach ($this->permitted as $rule) {
-            if (strpos($rule, '|')) {
-                $parts = explode('|', $rule);
-                $nodeName = array_shift($parts);
-                $this->rules['permitted'][$nodeName] = $parts;
-            }
-            else {
-                $this->rules['permitted'][$rule] = [];
-            }
+        if ($elements) {
+            $this->childNodes = $elements;
         }
-
+        if ($this->childNodes) {
+            $this->setChildNodes($this->childNodes);
+        }
         $p = [
             'simple' => [
                 'group_id', 'minq', 'stepq', 'model', 'age', 'vendor', 'vendorCode', 'manufacturer_warranty',
@@ -167,8 +161,40 @@ abstract class YmlOfferAbstract
         ]; // методы для всех
 
         // допустимые элементы
-        $this->permitted = array_merge($p[$offerType], $p_all);
+        //$this->permitted = array_merge($p[$offerType], $p_all);
 
+    }
+
+    public function elements(array $elements)
+    {
+        foreach ($elements as $name => $rules) {
+            if (is_int($name) && is_string($rules)) {
+                $name = $rules;
+                $rules = null;
+            }
+            if (strpos($rules, '|')) {
+                $this->validateRules['_'][$name] = $this->parseRules($rules);
+            }
+            else {
+                $this->validateRules['_'][$name] = [$rules => []];
+            }
+            if (isset($this->validateRules['_'][$name]['required'])) {
+                $this->validateRules['_required'][$name] = true;
+            }
+            if ($this->permittedOnly) {
+                $this->permitted[] = $name;
+            }
+        }
+
+        return $this;
+    }
+
+
+    protected function setChildNodes(array $childNodes)
+    {
+        $this->validateRules = [];
+
+        return $this->elements($childNodes);
     }
 
 
@@ -179,189 +205,209 @@ abstract class YmlOfferAbstract
         return $this;
     }
 
-    public function appendChild(\DOMNode $node)
+    public function setAttributeBool(string $name, $value)
     {
-        $this->domElement->appendChild($node);
+        return $this->setAttribute($name, $value ? 'true' : 'false');
     }
 
 
-    protected function check($expr, $msg)
+    /**
+     * @param string|array $rules
+     *
+     * @return array
+     */
+    protected function parseRules($rules)
     {
-        if ($expr) {
-            throw new \RuntimeException($msg);
+        $result = [];
+        if (is_string($rules)) {
+            $parts = explode('|', $rules);
+        }
+        foreach ($parts as $part) {
+            if (strpos($part, ':')) {
+                [$rule, $param] = explode(':', $part, 2);
+                if (preg_match('/^(\-?\d+)\s*,\s*(\-?\d+)$/', $param, $matches)) {
+                    $result[$rule] = [$matches[1], $matches[2]];
+                }
+                else {
+                    $result[$rule] = [$param];
+                }
+            }
+            else {
+                $result[$part] = [];
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param mixed $value
+     * @param string|array $rules
+     * @param string|null $error
+     *
+     * @return bool
+     */
+    public function validate($value, $rules, &$error = null): bool
+    {
+        $isValid = true;
+        if (is_string($rules)) {
+            $rules = $this->parseRules($rules);
+        }
+
+        if (isset($rules['nullable']) && ($value === null || $value === '')) {
+            return true;
+        }
+
+        foreach ($rules as $rule => $ruleParams) {
+            switch ($rule) {
+                case 'int': // int // integer
+                case 'integer': // int // integer
+                    $isValid = is_int($value);
+                    break;
+                case 'bool':
+                case 'boolean':
+                    $isValid = is_bool($value);
+                    break;
+                case 'float':
+                    $isValid = is_float($value);
+                    break;
+                case 'numeric':
+                    $isValid = is_numeric($value);
+                    break;
+
+                case 'alpha': // alpha // alpha:ascii
+                    if (isset($ruleParams[0]) && $ruleParams[0] === 'ascii') {
+                        $isValid = preg_match('/^([a-z])+$/ui', $value);
+                    }
+                    else {
+                        $isValid = preg_match('/^(\p{L}|\p{M})+$/ui', $value);
+                    }
+                    break;
+                case 'alpha_digits': // alpha_num // alpha_num:ascii
+                case 'alpha_num': // alpha_num // alpha_num:ascii
+                    if (isset($ruleParams[0]) && $ruleParams[0] === 'ascii') {
+                        $isValid = preg_match('/^([a-z0-9])+$/ui', $value);
+                    }
+                    else {
+                        $isValid = preg_match('/^(\p{L}|\p{M}|\p{N})+$/ui', $value);
+                    }
+                    break;
+                case 'between': // between:min,max
+                    $isValid = ($value >= $ruleParams[0] && $value <= $ruleParams[1]);
+                    break;
+                case 'cast': // cast:bool // cast:int
+                    if ($ruleParams[0] === 'bool') {
+                        $isValid = is_bool($value) || strtolower($value) === 'true' || strtolower($value) === 'false'
+                            || $value === 0 || $value === 1 || $value === '0' || $value === '1';
+                    }
+                    elseif ($ruleParams[0] === 'int') {
+                        $isValid = preg_match('/^([0-9])+$/', $value);
+                    }
+                    break;
+                case 'decimal': // decimal:len // decimal:min,max
+                    $checkValue = str_replace(',', '.', (string)$value);
+                    if (strpos($checkValue, '.')) {
+                        [$int, $dec] = explode('.', $checkValue, 2);
+                    }
+                    else {
+                        $dec = 0;
+                    }
+                    if (!empty($ruleParams[1])) {
+                        $isValid = strlen($dec) >= $ruleParams[0] && strlen($dec) <= $ruleParams[1];
+                    }
+                    elseif (!empty($ruleParams[0])) {
+                        $isValid = strlen($dec) == $ruleParams[0];
+                    }
+                    break;
+                case 'digits_between': // digits_between:len_min,len_max
+                case 'digits': // digits // digits:len // digits:len_min,len_max
+                    $isValid = preg_match('/^([0-9])+$/', $value);
+                    if (!empty($ruleParams[1])) {
+                        $isValid = $isValid && strlen($value) >= $ruleParams[0] && strlen($ruleParams) <= $ruleParams[1];
+                    }
+                    elseif (!empty($ruleParams[0])) {
+                        $isValid = $isValid && strlen($value) == $ruleParams[0];
+                    }
+                    break;
+                case 'email':
+                    $isValid = filter_var($value, FILTER_VALIDATE_EMAIL);
+                    break;
+                case 'max':
+                    $isValid = $value <= $ruleParams[0];
+                    break;
+                case 'min':
+                    $isValid = $value >= $ruleParams[0];
+                    break;
+                case 'regex': // regex:pattern
+                    $isValid = preg_match($ruleParams[0], $value);
+                    break;
+                case 'size': // size // size:len // size:len_min,len_max
+                    $checkValue = (string)$value;
+                    if (!empty($ruleParams[1])) {
+                        $isValid = mb_strlen($checkValue) >= $ruleParams[0] && mb_strlen($checkValue) <= $ruleParams[1];
+                    }
+                    elseif (!empty($ruleParams[0])) {
+                        $isValid = mb_strlen($checkValue) == $ruleParams[0];
+                    }
+                    break;
+                case 'size_max': // size_max:len
+                    $checkValue = (string)$value;
+                    if (!empty($ruleParams[0])) {
+                        $isValid = mb_strlen($checkValue) <= $ruleParams[0];
+                    }
+                    break;
+                case 'string': // string // string:len // string:len_min,len_max
+                    $isValid = is_string($value);
+                    if (!empty($ruleParams[1])) {
+                        $isValid = $isValid && mb_strlen($value) >= $ruleParams[0] && mb_strlen($value) <= $ruleParams[1];
+                    }
+                    elseif (!empty($ruleParams[0])) {
+                        $isValid = $isValid && mb_strlen($value) == $ruleParams[0];
+                    }
+                    break;
+                case 'url':
+                    $isValid = filter_var($value, FILTER_VALIDATE_URL);
+                    break;
+            }
+            if (!$isValid) {
+                $error = $rule;
+                if (isset($ruleParams[0], $ruleParams[1])) {
+                    $error .= ':' . $ruleParams[0] . ',' . $ruleParams[1];
+                }
+                elseif (isset($ruleParams[0])) {
+                    $error .= ':' . $ruleParams[0];
+                }
+                return false;
+            }
+        }
+
+        return $isValid;
+    }
+
+    /**
+     * @param string $name
+     * @param $value
+     *
+     * @return void
+     */
+    protected function validateNode(string $name, $value)
+    {
+        $isValid = true;
+        if (!empty($this->validateRules['_'][$name])) {
+            if (!$this->validate($value, $this->validateRules['_'][$name], $error)) {
+                throw new \RuntimeException(sprintf('Validation error for offer node "%s" with value "%s" (%s)', $name, $value, $error));
+            }
         }
     }
 
-
-    protected function validate(string $name, $value)
-    {
-
-    }
-
-
-    public function saveXML()
+    /**
+     * @return string
+     */
+    public function saveXML(): string
     {
         return $this->domDocument->saveXML($this->domElement);
     }
 
-
-    public function available($val = TRUE)
-    {
-        $this->check(!is_bool($val), "available должен быть boolean");
-        $this->setAttribute('available', ($val) ? 'true' : 'false');
-
-        return $this;
-    }
-
-    public function bid(int $bid)
-    {
-        $this->setAttribute('bid', $bid);
-
-        return $this;
-    }
-
-    public function cbid(int $cbid)
-    {
-        $this->setAttribute('cbid', $cbid);
-
-        return $this;
-    }
-
-    public function fee($fee)
-    {
-        $this->check(!is_int($fee), 'fee должен быть integer');
-        $this->setAttribute('fee', $fee);
-
-        return $this;
-    }
-
-    public function url($url)
-    {
-        $this->addNodeStr('url', $url, 512);
-
-        return $this;
-    }
-
-    public function addNodeStr(string $name, $val, $limit)
-    {
-        $this->check($limit && (mb_strlen($val, $this->xmlEncoding) > $limit), "$name должен быть короче $limit символов");
-
-        return $this->addNode($name, $val);
-    }
-
-    /**
-     * @param $name
-     * @param $val
-     * @param array|null $attrs
-     *
-     * @return \DomElement
-     *
-     * @throws DOMException
-     */
-    public function addNode($name, $val = null, ?array $attrs = []): \DomElement
-    {
-        if (is_bool($val)) {
-            $val = $val ? 'true' : 'false';
-        }
-        $newEl = (($val === null) ? new \DomElement($name) : new \DomElement($name, $val));
-        $this->domElement->appendChild($newEl);
-        if (!empty($attrs)) {
-            foreach ($attrs as $k => $v) {
-                $newEl->setAttribute($k, $v);
-            }
-        }
-        return $newEl;
-    }
-
-    /**
-     * @param $oldPrice
-     *
-     * @return $this
-     *
-     * @throws DOMException
-     */
-    public function oldPrice($oldPrice): static
-    {
-        $this->check((!is_int($oldPrice)) || ($oldPrice < 1), "oldprice должен быть целым положительным числом > 0");
-        $this->addNode('oldprice', $oldPrice);
-
-        return $this;
-    }
-
-    public function dlvOption($cost, $days, $before = -1)
-    {
-        $dlvs = $this->domElement->getElementsByTagName('delivery-options');
-
-        if (!$dlvs->length) {
-            $dlv = new \DomElement('delivery-options');
-            $this->domElement->appendChild($dlv);
-        }
-        else {
-            $dlv = $dlvs->item(0);
-            $opts = $dlv->getElementsByTagName('option');
-            $this->check($opts->length >= 5, "максимум 5 опций доставки");
-        }
-
-        $this->check(!is_int($cost) || $cost < 0, "cost должно быть целым и положительным");
-        $this->check(preg_match("/[^0-9\-]/", $days), "days должно состоять из цифр и тирэ");
-        $this->check(!is_int($before) || $before > 24, "order-before должно быть целым и меньше 25");
-
-        $opt = new \DomElement('option');
-        $dlv->appendChild($opt);
-
-        $opt->setAttribute('cost', $cost);
-        $opt->setAttribute('days', $days);
-
-        if ($before >= 0) {
-            $opt->setAttribute('order-before', $before);
-        }
-
-        return $this;
-    }
-
-    /**
-     * @param string|null $txt
-     * @param bool|null $tags
-     *
-     * @return $this
-     *
-     * @throws DOMException
-     */
-    public function description(?string $txt, ?bool $tags = false): YmlOfferAbstract
-    {
-        if ($txt) {
-            $this->check(mb_strlen($txt, $this->xmlEncoding) > 3000, "description должен быть короче 3000 символов");
-            if ($tags) {
-                $cdata = new \DOMCdataSection($txt);
-                $desc = new \DomElement('description');
-                $this->domElement->appendChild($desc);
-                $desc->appendChild($cdata);
-            }
-            else {
-                $this->addNode('description', $txt);
-            }
-        }
-
-        return $this;
-    }
-
-
-    public function inStock(int $value)
-    {
-        $list = $this->getElementsByTagName('outlet');
-        if ($list->length) {
-            $outlet = $list->item(0);
-            $outlet->setAttribute('outlet', $value);
-        }
-        else {
-            $outlet = $this->createElement('outlet');
-            $outlet->setAttribute('outlet', $value);
-            $outlet->setAttribute('id', 1);
-            $this->addNode('outlets');
-            $outlets = $this->getElementsByTagName('outlets')->item(0);
-            $outlets->appendChild($outlet);
-        }
-    }
 
     /**
      * @param float $val
@@ -374,226 +420,78 @@ abstract class YmlOfferAbstract
         return number_format($val, $decimals, '.', '');
     }
 
+    /**
+     * @param string $name
+     * @param $value
+     * @param array|null $attrs
+     *
+     * @return \DomElement
+     *
+     * @throws DOMException
+     */
+    public function appendNode(string $name, $value = null, ?array $attrs = []): \DomElement
+    {
+        if ($this->permittedOnly && !in_array($name, $this->permitted)) {
+            throw new \RuntimeException(sprintf('Nom permitted element %s', $name));
+        }
+        if (!is_object($value)) {
+            $this->validateNode($name, $value);
+            if (is_bool($value)) {
+                $value = $value ? 'true' : 'false';
+            }
+            $node = (($value === null) ? new \DomElement($name) : new \DomElement($name, $value));
+            $this->domElement->appendChild($node);
+        }
+        else {
+            $node = new \DomElement($name);
+            $this->domElement->appendChild($node);
+            $node->appendChild($value);
+        }
+        if (!empty($attrs)) {
+            foreach ($attrs as $k => $v) {
+                $node->setAttribute($k, $v);
+            }
+        }
+        return $node;
+    }
+
+    /**
+     * @param string $name
+     * @param $value
+     * @param array|null $attrs
+     *
+     * @return $this
+     *
+     * @throws DOMException
+     */
+    public function append(string $name, $value = null, ?array $attrs = [])
+    {
+        $this->appendNode($name, $value, $attrs);
+
+        return $this;
+    }
+
+    /**
+     * @param $method
+     * @param $args
+     *
+     * @return $this
+     *
+     * @throws DOMException
+     */
     public function __call($method, $args)
     {
-        if (array_key_exists($method, $this->aliases)) {
-            $method = $this->aliases[$method];
-        }
-
-        $this->check(!in_array($method, $this->permitted), "$method вызван при типе товара {$this->offerType}");
-
-        // значения, которые просто добавляем
-        if (
-            in_array($method, [
-                'model', 'series', 'author', 'vendorCode', 'vendor', 'expiry', 'rec',
-                'typePrefix', 'country_of_origin', 'ISBN', 'volume', 'part', 'language', 'binding', 'table_of_contents', 'performed_by',
-                'performance_type', 'storage', 'format', 'recording_length', 'artist', 'media', 'starring', 'director', 'originalName', 'country', 'worldRegion', 'region', 'dataTour'
-                , 'hotel_stars', 'room', 'meal', 'price_min', 'price_max', 'options', 'hall', 'hall_part', 'is_premiere', 'is_kids', 'vat',
-            ])
-        ) {
-            $this->addNode($method, $args[0]);
-
-            return $this;
-        }
-
-        // флаги
-        if (in_array($method, ['downloadable', 'adult', 'store', 'pickup', 'delivery', 'manufacturer_warranty'])) {
-            if (!isset($args[0])) {
-                $args[0] = TRUE;
+        if (preg_match('/^add([A-Z][a-zA-Z0-9_]+)$/', $method, $m)) {
+            $method = strtolower(preg_replace('/(?<!^)[A-Z]/', '_$0', $m[1]));
+            if (array_key_exists($method, $this->aliases)) {
+                $method = $this->aliases[$method];
             }
-            $this->addNode($method, ($args[0]) ? 'true' : 'false');
+            $this->appendNode($method, $args[0]);
 
             return $this;
         }
 
-        $method = '_' . $method;
-        $this->$method($args);
-
         return $this;
     }
-
-    /**
-     * @param bool|null $flag
-     *
-     * @return $this
-     *
-     * @throws DOMException
-     */
-    public function pickup(?bool $flag = false): YmlOfferAbstract
-    {
-        $this->addNode('pickup', ($flag ? 'true' : 'false'));
-
-        return $this;
-    }
-
-    /**
-     * @param bool|null $flag
-     *
-     * @return $this
-     *
-     * @throws DOMException
-     */
-    public function store(?bool $flag = false): YmlOfferAbstract
-    {
-        $this->addNode('store', ($flag ? 'true' : 'false'));
-
-        return $this;
-    }
-
-    /**
-     * @param float $w
-     * @param float $h
-     * @param float $d
-     * @param string|null $unit
-     *
-     * @return $this
-     *
-     * @throws DOMException
-     */
-    public function dimensions(float $w, float $h, float $d, ?string $unit = null): YmlOfferAbstract
-    {
-        $attrs = [];
-        if ($unit) {
-            $attrs = ['unit', $unit];
-        }
-        $val = $this->floatStr($w, 2) . '/' . $this->floatStr($h, 2) . '/' . $this->floatStr($d, 2);
-        $this->addNode('dimensions', $val, $attrs);
-
-        return $this;
-    }
-
-    /**
-     * @param float $weight
-     *
-     * @return $this
-     *
-     * @throws DOMException
-     */
-    public function weight(float $weight): YmlOfferAbstract
-    {
-        $this->addNode('weight', $this->floatStr($weight));
-
-        return $this;
-    }
-
-
-    public function _minq($args)
-    {
-        $this->check(!is_int($args[0]) || $args[0] < 1, "min-quantity должен содержать только цифры");
-        return $this->addNode('min-quantity', $args[0]);
-    }
-
-    public function _stepq($args)
-    {
-        $this->check(!is_int($args[0]) || $args[0] < 1, "step-quantity должен содержать только цифры");
-        return $this->addNode('step-quantity', $args[0]);
-    }
-
-    public function _page_extent($args)
-    {
-        $this->check(!is_int($args[0]), "page_extent должен содержать только цифры");
-        $this->check($args[0] < 0, "page_extent должен быть положительным числом");
-
-        return $this->addNode('page_extent', $args[0]);
-    }
-
-    public function _sales_notes($args)
-    {
-        return $this->addNodeStr('sales_notes', $args[0], 50);
-    }
-
-    public function _age($args)
-    {
-        $this->check(!is_int($args[0]), 'age должен иметь тип int');
-
-        $ageEl = new \DomElement('age', $args[0]);
-        $this->appendChild($ageEl);
-        $ageEl->setAttribute('unit', $args[1]);
-
-        switch ($args[1]) {
-            case 'year':
-                $this->check(!in_array($args[0], [0, 6, 12, 16, 18]), 'age при age_unit=year должен быть 0, 6, 12, 16 или 18');
-                break;
-
-            case 'month':
-                $this->check(($args[0] < 0) || ($args[0] > 12), 'age при age_unit=month должен быть 0<=age<=12');
-                break;
-
-            default:
-                $this->check(TRUE, 'age unit должен быть month или year');
-                break;
-        }
-        return $this;
-    }
-
-    public function _param($args)
-    {
-        $newEl = new \DomElement('param', $args[1]);
-        $this->appendChild($newEl);
-        $newEl->setAttribute('name', $args[0]);
-        if (isset($args[2])) {
-            $newEl->setAttribute('unit', $args[2]);
-        }
-        return $this;
-    }
-
-    /**
-     * @param string $url
-     *
-     * @return $this
-     */
-    public function picture(string $url): static
-    {
-        $pics = $this->domElement->getElementsByTagName('picture');
-        $this->check($pics->length > 10, 'Можно использовать максимум 10 картинок');
-        $this->addNodeStr('picture', $url, 512);
-
-        return $this;
-    }
-
-    public function _group_id($args)
-    {
-        $this->check(!is_int($args[0]), 'group_id должен содержать только цифры');
-        $this->check(strlen($args[0]) > 9, 'group_id не должен быть длиннее 9 символов');
-        $this->setAttribute('group_id', $args[0]);
-
-        return $this;
-    }
-
-    /**
-     * @param $barcode
-     *
-     * @return $this
-     *
-     * @throws DOMException
-     */
-    public function barcode($barcode): static
-    {
-        $barcode = trim($barcode);
-        $len = strlen($barcode);
-        $this->check(!preg_match('/^[0-9]+$/', $barcode), 'barcode должен содержать только цифры');
-        $this->check(!($len == 8 || $len == 12 || $len == 13), 'barcode должен содержать 8, 12 или 13 цифр');
-        $this->addNode('barcode', $barcode);
-
-        return $this;
-    }
-
-    public function _year($args)
-    {
-        $this->check(!is_int($args[0]), 'year должен быть int');
-
-        return $this->addNode('year', $args[0]);
-    }
-
-
-    public function _cpa($args)
-    {
-        if (!isset($args[0])) {
-            $args[0] = TRUE;
-        }
-
-        return $this->addNode('cpa', ($args[0]) ? '1' : '0');
-    }
-
 
 }

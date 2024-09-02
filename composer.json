@@ -12,6 +12,9 @@
         "ext-dom": "*",
         "ext-mbstring": "*"
     },
+    "require-dev": {
+        "phpunit/phpunit": "^9.0"
+    },
     "autoload": {
         "psr-4": {
             "avadim\\YandexYmlGenerator\\": "src"

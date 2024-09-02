@@ -46,17 +46,17 @@ $yml
 //-------------- добавляем одно УПРОЩЕННОЕ описание товара -----------------------------
 
 // name , id , price, currencyId, categoryId, [price from - "цена от ххх руб." ]
-/** @var \avadim\YandexYmlGenerator\YmlOffer $offer */
-$offer = $yml->offerSimple('Наручные часы Casio A1234567B', 'id01id1111', 900, 'USD', 15 /* , true*/);
+/** @var \avadim\YandexYmlGenerator\YmlOfferSimple $offer */
+$offer = $yml->offerSimple('id01id1111','Наручные часы Casio A1234567B',  15, 900, 'USD');
 
 $offer
     ->model('V RACER NYLON')                            //      модель товара
     ->vendor('Adidas')                                     //      Производитель
     ->vendorCode('I do not know')                          //      Код производителя для данного товара.
-    ->cbid(80)                                             //      Размер ставки на карточке товара. 0,8 у.е.
-    ->bid(90)                                              //      Размер ставки на остальных местах размещения. 0,9 у.е.
-    ->fee(220)                                             //      Размер комиссии от цены товара. 2.2%
-    ->available(false)                                     //      под заказ
+    ->attrCbid(80)                                             //      Размер ставки на карточке товара. 0,8 у.е.
+    ->attrBid(90)                                              //      Размер ставки на остальных местах размещения. 0,9 у.е.
+    ->attrFee(220)                                             //      Размер комиссии от цены товара. 2.2%
+    ->attrAvailable(false)                                     //      под заказ
 
     ->url("http://magaz.ru/tovar.html")                    // !!!    условно обязательный. URL страницы товара
 
@@ -111,17 +111,17 @@ $offer
 
 
 // name , id , price, currencyId, categoryId, [price from - "цена от ххх руб." ]
-$offer = $yml->offerSimple('Наручные часы Casio A1234567B', 'id01id1111', 900, "USD", 15 /* , true*/);
+$offer = $yml->offerSimple('id01id1111','Наручные часы Casio A1234567B', 15, 900, 'USD');
 
 
 $offer
+    ->attrCbid(80)                                              //      Размер ставки на карточке товара. 0,8 у.е.
+    ->attrBid(90)                                               //      Размер ставки на остальных местах размещения. 0,9 у.е.
+    ->attrFee(220)                                              //      Размер комиссии от цены товара. 2.2%
+    ->attrAvailable(false)                                      //      под заказ
     ->model('V RACER NYLON')                             //      модель товара
     ->vendor('Adidas')                                      //      Производитель
     ->vendorCode('I do not know')                           //      Код производителя для данного товара.
-    ->cbid(80)                                              //      Размер ставки на карточке товара. 0,8 у.е.
-    ->bid(90)                                               //      Размер ставки на остальных местах размещения. 0,9 у.е.
-    ->fee(220)                                              //      Размер комиссии от цены товара. 2.2%
-    ->available(false)                                      //      под заказ
 
     ->url("http://magaz.ru/tovar.html")                     // !!!  условно обязательный. URL страницы товара
 

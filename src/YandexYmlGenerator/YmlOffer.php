@@ -7,8 +7,6 @@ use DOMException;
 /**
  * @method $this series($arg)
  * @method $this author($arg)
- * @method $this vendorCode($arg)
- * @method $this vendor($arg)
  * @method $this expiry($arg)
  * @method $this rec($arg)
  * @method $this typePrefix($arg)
@@ -66,164 +64,70 @@ use DOMException;
  * @method $this cpa($arg)
  *
  */
-class YmlOffer
+class YmlOffer extends YmlOfferAbstract
 {
-    protected string $offerType;
-    protected string $xmlEncoding;
-    protected $permitted;
-    protected array $aliases
-        = [
-            'countryOfOrigin' => 'country_of_origin', 'tableOfContents' => 'table_of_contents',
-            'performedBy' => 'performed_by', 'performanceType' => 'performance_type', 'recordingLength' => 'recording_length',
-            'origin' => 'country_of_origin', 'warranty' => 'manufacturer_warranty', 'sale' => 'sales_notes',
-            'isbn' => 'ISBN', 'pages' => 'page_extent', 'pageExtent' => 'page_extent', 'contents' => 'table_of_contents',
-            'performer' => 'performed_by', 'performance' => 'performance_type', 'length' => 'recording_length',
-            'hotelStars' => 'hotel_stars',
-            'stars' => 'hotel_stars', 'priceMin' => 'price_min', 'priceMax' => 'price_max',
-            'hallPart' => 'hall_part', 'premiere' => 'is_premiere', 'isPremiere' => 'is_premiere',
-            'kids' => 'is_kids', 'isKids' => 'is_kids', 'groupId' => 'group_id', 'manufacturerWarranty' => 'manufacturer_warranty',
-        ];
+    protected array $childNodes = [
+        'url' => 'url|size:1,512',
+        'oldprice' => 'int|min:1',
+    ];
 
-    public $domElement = null;
-
-
-    public function __construct($document, string $offerType)
+    public function attrAvailable(bool $val)
     {
-        $this->domElement = $document->createElement('offer');
-        $this->offerType = $offerType;
-        $p = [
-            'simple' => [
-                'group_id', 'minq', 'stepq', 'model', 'age', 'vendor', 'vendorCode', 'manufacturer_warranty',
-                'downloadable', 'adult', 'rec',
-            ],
-            'arbitrary' => [
-                'group_id', 'minq', 'stepq', 'age', 'vendorCode', 'manufacturer_warranty', 'adult', 'downloadable',
-                'typePrefix', 'rec',
-            ],
-            'book' => [
-                'age', 'manufacturer_warranty', 'downloadable', 'author', 'series', 'year', 'ISBN', 'volume', 'part',
-                'language', 'binding', 'page_extent', 'minq', 'stepq', 'adult', 'table_of_contents',
-            ],
-            'audiobook' => [
-                'adult', 'manufacturer_warranty', 'minq', 'stepq', 'age', 'downloadable', 'author', 'series', 'year',
-                'delivery', 'ISBN', 'volume', 'part', 'language', 'table_of_contents', 'performed_by', 'performance_type',
-                'storage', 'format', 'recording_length',
-            ],
-            'artist' => [
-                'minq', 'manufacturer_warranty', 'stepq', 'adult', 'age', 'year', 'media', 'artist', 'downloadable',
-                'starring', 'director', 'originalName', 'country',
-            ],
-            'tour' => [
-                'minq', 'stepq', 'manufacturer_warranty', 'age', 'adult', 'country', 'worldRegion', 'region', 'dataTour',
-                'hotel_stars', 'room', 'meal', 'price_min', 'price_max', 'downloadable', 'options',
-            ],
-            'event' => [
-                'manufacturer_warranty', 'minq', 'stepq', 'adult', 'age', 'hall', 'hall_part', 'downloadable',
-                'is_premiere', 'is_kids',
-            ],
-            'medicine' => ['vendorCode', 'vendor'],
-        ];
-
-        $p_all = [
-            'sales_notes', 'country_of_origin', 'barcode', 'cpa', 'param', 'pickup', 'delivery', 'store', 'vat',
-            'expiry', 'weight', 'dimensions',
-        ]; // методы для всех
-
-        // допустимые элементы
-        $this->permitted = array_merge($p[$offerType], $p_all);
-
-        $this->xmlEncoding = $document->xmlEncoding;
-    }
-
-
-    public function setAttribute(string $name, string $value)
-    {
-        $this->domElement->setAttribute($name, $value);
+        $this->setAttributeBool('available', $val);
 
         return $this;
     }
 
-    public function appendChild(\DOMNode $node)
+    public function attrBid(int $bid)
     {
-        $this->domElement->appendChild($node);
-    }
-
-
-    public function available($val = TRUE)
-    {
-        $this->check(!is_bool($val), "available должен быть boolean");
-        $this->setAttribute('available', ($val) ? 'true' : 'false');
-
-        return $this;
-    }
-
-    public function check($expr, $msg)
-    {
-        if ($expr) {
-            throw new \RuntimeException($msg);
-        }
-    }
-
-    public function bid($bid)
-    {
-        $this->check(!is_int($bid), 'bid должен быть integer');
         $this->setAttribute('bid', $bid);
 
         return $this;
     }
 
-    public function cbid($cbid)
+    public function attrCbid(int $cbid)
     {
-        $this->check(!is_int($cbid), 'cbid должен быть integer');
         $this->setAttribute('cbid', $cbid);
 
         return $this;
     }
 
-    public function fee($fee)
+    public function attrFee(int $fee)
     {
-        $this->check(!is_int($fee), 'fee должен быть integer');
         $this->setAttribute('fee', $fee);
 
         return $this;
     }
 
-    public function url($url)
+    public function model(string $val)
     {
-        $this->addNodeStr('url', $url, 512);
+        $this->appendNode('model', $val);
 
         return $this;
     }
 
-    public function addNodeStr(string $name, $val, $limit)
-    {
-        $this->check($limit && (mb_strlen($val, $this->xmlEncoding) > $limit), "$name должен быть короче $limit символов");
 
-        return $this->addNode($name, $val);
+    public function vendor(string $val)
+    {
+        $this->appendNode('vendor', $val);
+
+        return $this;
     }
 
-    /**
-     * @param $name
-     * @param $val
-     * @param array|null $attrs
-     *
-     * @return \DomElement
-     *
-     * @throws DOMException
-     */
-    public function addNode($name, $val = null, ?array $attrs = []): \DomElement
+
+    public function vendorCode(string $val)
     {
-        if (is_bool($val)) {
-            $val = $val ? 'true' : 'false';
-        }
-        $newEl = (($val === null) ? new \DomElement($name) : new \DomElement($name, $val));
-        $this->domElement->appendChild($newEl);
-        if (!empty($attrs)) {
-            foreach ($attrs as $k => $v) {
-                $newEl->setAttribute($k, $v);
-            }
-        }
-        return $newEl;
+        $this->appendNode('vendorCode', $val);
+
+        return $this;
+    }
+
+
+    public function url(string $url)
+    {
+        $this->appendNode('url', $url);
+
+        return $this;
     }
 
     /**
@@ -233,30 +137,29 @@ class YmlOffer
      *
      * @throws DOMException
      */
-    public function oldPrice($oldPrice): static
+    public function oldPrice(int $oldPrice)
     {
-        $this->check((!is_int($oldPrice)) || ($oldPrice < 1), "oldprice должен быть целым положительным числом > 0");
-        $this->addNode('oldprice', $oldPrice);
+        $this->appendNode('oldprice', $oldPrice);
 
         return $this;
     }
 
-    public function dlvOption($cost, $days, $before = -1)
+    public function deliveryOption($cost, $days, $before = -1)
     {
-        $dlvs = $this->domElement->getElementsByTagName('delivery-options');
+        $options = $this->domElement->getElementsByTagName('delivery-options');
 
-        if (!$dlvs->length) {
+        if (!$options->length) {
             $dlv = new \DomElement('delivery-options');
             $this->domElement->appendChild($dlv);
         }
         else {
-            $dlv = $dlvs->item(0);
+            $dlv = $options->item(0);
             $opts = $dlv->getElementsByTagName('option');
             $this->check($opts->length >= 5, "максимум 5 опций доставки");
         }
 
         $this->check(!is_int($cost) || $cost < 0, "cost должно быть целым и положительным");
-        $this->check(preg_match("/[^0-9\-]/", $days), "days должно состоять из цифр и тирэ");
+        $this->check(preg_match("/[^0-9\-]/", $days), "days должно состоять из цифр и тире");
         $this->check(!is_int($before) || $before > 24, "order-before должно быть целым и меньше 25");
 
         $opt = new \DomElement('option');
@@ -283,15 +186,13 @@ class YmlOffer
     public function description(?string $txt, ?bool $tags = false): YmlOffer
     {
         if ($txt) {
-            $this->check(mb_strlen($txt, $this->xmlEncoding) > 3000, "description должен быть короче 3000 символов");
+            $this->validateNode('description', $txt);
             if ($tags) {
                 $cdata = new \DOMCdataSection($txt);
-                $desc = new \DomElement('description');
-                $this->domElement->appendChild($desc);
-                $desc->appendChild($cdata);
+                $this->appendNode('description', $cdata);
             }
             else {
-                $this->addNode('description', $txt);
+                $this->appendNode('description', $txt);
             }
         }
 
@@ -310,59 +211,10 @@ class YmlOffer
             $outlet = $this->createElement('outlet');
             $outlet->setAttribute('outlet', $value);
             $outlet->setAttribute('id', 1);
-            $this->addNode('outlets');
+            $this->appendNode('outlets');
             $outlets = $this->getElementsByTagName('outlets')->item(0);
             $outlets->appendChild($outlet);
         }
-    }
-
-    /**
-     * @param float $val
-     * @param int|null $decimals
-     *
-     * @return string
-     */
-    protected function floatStr(float $val, ?int $decimals = 3): string
-    {
-        return number_format($val, $decimals, '.', '');
-    }
-
-    public function __call($method, $args)
-    {
-        if (array_key_exists($method, $this->aliases)) {
-            $method = $this->aliases[$method];
-        }
-
-        $this->check(!in_array($method, $this->permitted), "$method вызван при типе товара {$this->offerType}");
-
-        // значения, которые просто добавляем
-        if (
-            in_array($method, [
-                'model', 'series', 'author', 'vendorCode', 'vendor', 'expiry', 'rec',
-                'typePrefix', 'country_of_origin', 'ISBN', 'volume', 'part', 'language', 'binding', 'table_of_contents', 'performed_by',
-                'performance_type', 'storage', 'format', 'recording_length', 'artist', 'media', 'starring', 'director', 'originalName', 'country', 'worldRegion', 'region', 'dataTour'
-                , 'hotel_stars', 'room', 'meal', 'price_min', 'price_max', 'options', 'hall', 'hall_part', 'is_premiere', 'is_kids', 'vat',
-            ])
-        ) {
-            $this->addNode($method, $args[0]);
-
-            return $this;
-        }
-
-        // флаги
-        if (in_array($method, ['downloadable', 'adult', 'store', 'pickup', 'delivery', 'manufacturer_warranty'])) {
-            if (!isset($args[0])) {
-                $args[0] = TRUE;
-            }
-            $this->addNode($method, ($args[0]) ? 'true' : 'false');
-
-            return $this;
-        }
-
-        $method = '_' . $method;
-        $this->$method($args);
-
-        return $this;
     }
 
     /**
@@ -374,7 +226,7 @@ class YmlOffer
      */
     public function pickup(?bool $flag = false): YmlOffer
     {
-        $this->addNode('pickup', ($flag ? 'true' : 'false'));
+        $this->appendNode('pickup', ($flag ? 'true' : 'false'));
 
         return $this;
     }
@@ -388,7 +240,7 @@ class YmlOffer
      */
     public function store(?bool $flag = false): YmlOffer
     {
-        $this->addNode('store', ($flag ? 'true' : 'false'));
+        $this->appendNode('store', ($flag ? 'true' : 'false'));
 
         return $this;
     }
@@ -410,7 +262,7 @@ class YmlOffer
             $attrs = ['unit', $unit];
         }
         $val = $this->floatStr($w, 2) . '/' . $this->floatStr($h, 2) . '/' . $this->floatStr($d, 2);
-        $this->addNode('dimensions', $val, $attrs);
+        $this->appendNode('dimensions', $val, $attrs);
 
         return $this;
     }
@@ -424,7 +276,7 @@ class YmlOffer
      */
     public function weight(float $weight): YmlOffer
     {
-        $this->addNode('weight', $this->floatStr($weight));
+        $this->appendNode('weight', $this->floatStr($weight));
 
         return $this;
     }
@@ -433,13 +285,13 @@ class YmlOffer
     public function _minq($args)
     {
         $this->check(!is_int($args[0]) || $args[0] < 1, "min-quantity должен содержать только цифры");
-        return $this->addNode('min-quantity', $args[0]);
+        return $this->appendNode('min-quantity', $args[0]);
     }
 
     public function _stepq($args)
     {
         $this->check(!is_int($args[0]) || $args[0] < 1, "step-quantity должен содержать только цифры");
-        return $this->addNode('step-quantity', $args[0]);
+        return $this->appendNode('step-quantity', $args[0]);
     }
 
     public function _page_extent($args)
@@ -447,7 +299,7 @@ class YmlOffer
         $this->check(!is_int($args[0]), "page_extent должен содержать только цифры");
         $this->check($args[0] < 0, "page_extent должен быть положительным числом");
 
-        return $this->addNode('page_extent', $args[0]);
+        return $this->appendNode('page_extent', $args[0]);
     }
 
     public function _sales_notes($args)
@@ -495,14 +347,28 @@ class YmlOffer
      *
      * @return $this
      */
-    public function picture(string $url): static
+    public function picture(string $url)
     {
         $pics = $this->domElement->getElementsByTagName('picture');
-        $this->check($pics->length > 10, 'Можно использовать максимум 10 картинок');
-        $this->addNodeStr('picture', $url, 512);
+        //$this->check($pics->length > 10, 'Можно использовать максимум 10 картинок');
+        $this->appendNode('picture', $url);
 
         return $this;
     }
+
+    /**
+     * @param array $pictures
+     * @return $this
+     */
+    public function pictures(array $pictures)
+    {
+        foreach ($pictures as $url) {
+            $this->picture($url);
+        }
+
+        return $this;
+    }
+
 
     public function _group_id($args)
     {
@@ -520,13 +386,13 @@ class YmlOffer
      *
      * @throws DOMException
      */
-    public function barcode($barcode): static
+    public function barcode($barcode)
     {
         $barcode = trim($barcode);
         $len = strlen($barcode);
         $this->check(!preg_match('/^[0-9]+$/', $barcode), 'barcode должен содержать только цифры');
         $this->check(!($len == 8 || $len == 12 || $len == 13), 'barcode должен содержать 8, 12 или 13 цифр');
-        $this->addNode('barcode', $barcode);
+        $this->appendNode('barcode', $barcode);
 
         return $this;
     }
@@ -535,7 +401,7 @@ class YmlOffer
     {
         $this->check(!is_int($args[0]), 'year должен быть int');
 
-        return $this->addNode('year', $args[0]);
+        return $this->appendNode('year', $args[0]);
     }
 
 
@@ -545,7 +411,7 @@ class YmlOffer
             $args[0] = TRUE;
         }
 
-        return $this->addNode('cpa', ($args[0]) ? '1' : '0');
+        return $this->appendNode('cpa', ($args[0]) ? '1' : '0');
     }
 
 
